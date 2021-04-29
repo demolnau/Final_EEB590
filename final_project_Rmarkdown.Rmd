@@ -17,4 +17,59 @@ This assignment is due prior to the last day class. You are to self-select and w
 1: Obtain a dataset. This may be one of your own, a dataset from DRYAD, or some other source. Identify hypotheses for this dataset and analyze patterns in the data. You may use any methods learned during the semester, but at least one analysis must come from material learned in weeks 11-13.
 
 USE COMMENTS IN THE R CODE to describe what the patterns you find represent.
+```{r echo=FALSE}
+setwd("D:/Documents/BoxSync/Classes_Spring2021/Advanced_Biostatistics_EEB590C/Homework/Final_EEB590")
+#load appropriate libraries
+library(knitr)
+library(RRPP)
+library(geomorph)
+library(tidyverse)
+library(readxl)
+library(ade4)
+library(vegan)
+library(mice)
 
+```
+
+
+```{r}
+#READ IN DATA AS DATAFRAME
+?read_excel
+data<-read_excel(path="data/TransformGuaduaSet.xlsx", col_names = TRUE, na="x")
+
+```
+# TODO 
+#### Imputation to add in missing data --> Mice package , logistic regression
+#### Distance matrix for binary is simple matching coefficient
+Example 
+```{r}
+data(sipoo)
+
+ 
+
+## Some useful measures
+
+#http://pbil.univ-lyon1.fr/ADE-4/ade4-html/dist.binary.html
+
+ 
+
+# Simple Matching Coefficient
+
+# Shared presence and shared absence (as proportion of total)
+
+dist.binary(sipoo,method = 2)
+
+ 
+
+#Jaccard distance
+
+# Uses shared presence only (as proportion of total)
+
+dist.binary(sipoo,method = 1)
+```
+
+
+#### Remove Column V and Y
+ V. Adaxial: Frequency of stomates if present on the adaxial surface of foliage leaf blades:  0 = common; 1 = infrequent.
+Y. Adaxial: Papillae on long cells of the intercostal zone adjacent to the stomates:  0 = not overarching the stomates; 1 = overarching the stomates.
+#### Fill in empty cells with NA
