@@ -30,46 +30,88 @@ library(vegan)
 library(mice)
 
 ```
+# TODO
+## INTRO
 
 
 ```{r}
 #READ IN DATA AS DATAFRAME
-?read_excel
-data<-read_excel(path="data/TransformGuaduaSet.xlsx", col_names = TRUE, na="x")
+mydata<-read_excel(path="data/TransformGuaduaSet.xlsx", col_names = TRUE, na="x")
 
 ```
-# TODO 
-#### Imputation to add in missing data --> Mice package , logistic regression
-#### Distance matrix for binary is simple matching coefficient
-Example 
-```{r}
-data(sipoo)
-
- 
-
-## Some useful measures
-
-#http://pbil.univ-lyon1.fr/ADE-4/ade4-html/dist.binary.html
-
- 
-
-# Simple Matching Coefficient
-
-# Shared presence and shared absence (as proportion of total)
-
-dist.binary(sipoo,method = 2)
-
- 
-
-#Jaccard distance
-
-# Uses shared presence only (as proportion of total)
-
-dist.binary(sipoo,method = 1)
-```
-
+## Preprocessing 
 
 #### Remove Column V and Y
+Remove column V and Y, because there is missing data and we cannot impute the data because it just doesn't make sense to attempt to predict these columns.
+
  V. Adaxial: Frequency of stomates if present on the adaxial surface of foliage leaf blades:  0 = common; 1 = infrequent.
 Y. Adaxial: Papillae on long cells of the intercostal zone adjacent to the stomates:  0 = not overarching the stomates; 1 = overarching the stomates.
-#### Fill in empty cells with NA
+```{r}
+to_drop<-c("Adaxial: Papillae on long cells of the intercostal zone adjacent to the stomates:  0 = not overarching the stomates; 1 = overarching the stomates.","Adaxial: Frequency of stomates if present on the adaxial surface of foliage leaf blades:  0 = common; 1 = infrequent.")
+
+df=data.frame(mydata[,!( names(mydata) %in% to_drop)],stringsAsFactors = TRUE)
+```
+
+#### Make sure that the columns are what they should be
+```{r}
+df<-data.frame(lapply(df,as.factor))
+str(df)
+```
+
+#### Imputation of missing data
+
+In the last three columns, in some species the papillae of the cells adjacent to the stomata obscured theshape of the subsidiary cells. Therefore, the shapes of these subsidiary cells resulted in missing data that we imputed using the MICE package's logistic regression method. 
+
+```{r}
+init = mice(df,maxit=0)
+meth = init$method
+predM=init$predictorMatrix
+meth[c(colnames(df[,7:length(df)]))]<-"logreg"
+set.seed(183)
+imputed<-mice(df,method = meth, predictorMatrix = predM, m=5,printFlag = FALSE)
+imputed<-complete(imputed)
+
+```
+
+
+```{r}
+sapply(imputed,function(x) sum(is.na(x))) #double check to make sure there are no more NA
+```
+
+## Analysis
+
+#### PCOA
+```{r}
+#TODO
+?dist.binary() #Distance matrix for binary is simple matching coefficient
+
+```
+#### STICK PLOT of PCOA
+```{r}
+#TODO
+#example
+#screeplot(pca.bumpus,bstick = TRUE) 
+```
+
+#### FACTORIAL ANOVA 
+
+```{r}
+#TODO
+```
+
+
+#### INTERACTIONS
+```{r}
+#TODO
+#### Group VS country
+#### Group vs habitat
+
+```
+
+#### MODEL COMPARISON USING LIKELIHOOD RATIO TEST (LTR)
+```{r}
+#TODO
+```
+
+
+
