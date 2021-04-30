@@ -17,7 +17,7 @@ This assignment is due prior to the last day class. You are to self-select and w
 1: Obtain a dataset. This may be one of your own, a dataset from DRYAD, or some other source. Identify hypotheses for this dataset and analyze patterns in the data. You may use any methods learned during the semester, but at least one analysis must come from material learned in weeks 11-13.
 
 USE COMMENTS IN THE R CODE to describe what the patterns you find represent.
-```{r echo=FALSE}
+```{r, results='hide',message=FALSE,warning=FALSE}
 setwd("D:/Documents/BoxSync/Classes_Spring2021/Advanced_Biostatistics_EEB590C/Homework/Final_EEB590")
 #load appropriate libraries
 library(knitr)
@@ -28,18 +28,21 @@ library(readxl)
 library(ade4)
 library(vegan)
 library(mice)
-
 ```
-# TODO
-## INTRO
 
+## Intro
+TODO
+
+
+## Preprocessing
+
+#### Read in data
 
 ```{r}
 #READ IN DATA AS DATAFRAME
 mydata<-read_excel(path="data/TransformGuaduaSet.xlsx", col_names = TRUE, na="x")
 
 ```
-## Preprocessing 
 
 #### Remove Column V and Y
 Remove column V and Y, because there is missing data and we cannot impute the data because it just doesn't make sense to attempt to predict these columns.
@@ -52,10 +55,10 @@ to_drop<-c("Adaxial: Papillae on long cells of the intercostal zone adjacent to 
 df=data.frame(mydata[,!( names(mydata) %in% to_drop)],stringsAsFactors = TRUE)
 ```
 
-#### Make sure that the columns are what they should be
+#### Set columns to factors
 ```{r}
 df<-data.frame(lapply(df,as.factor))
-str(df)
+
 ```
 
 #### Imputation of missing data
@@ -70,7 +73,6 @@ meth[c(colnames(df[,7:length(df)]))]<-"logreg"
 set.seed(183)
 imputed<-mice(df,method = meth, predictorMatrix = predM, m=5,printFlag = FALSE)
 imputed<-complete(imputed)
-
 ```
 
 
@@ -83,9 +85,11 @@ sapply(imputed,function(x) sum(is.na(x))) #double check to make sure there are n
 #### PCOA
 ```{r}
 #TODO
-?dist.binary() #Distance matrix for binary is simple matching coefficient
+#dist.binary() #Distance matrix for binary is simple matching coefficient
 
 ```
+
+
 #### STICK PLOT of PCOA
 ```{r}
 #TODO
