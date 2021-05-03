@@ -191,32 +191,43 @@ nice_df %>%
 ```{r}
 #Factorial MANOVA via RRPP
 
-# Y<-imputed[,7:ncol(imputed)]
-# Y<-data.frame(lapply(Y,function(x) as.numeric(levels(x))[x]))
-?lm.rrpp
-mydat<-rrpp.data.frame("Y"=imputed[,7:ncol(imputed)],"Group_2"= as.factor(imputed$Group_2), "Habitat"=as.factor(imputed$Habitat), "Country" = as.factor(imputed$Country))
+Y<-imputed[,7:ncol(imputed)]
+Y<-data.frame(lapply(Y,function(x) as.numeric(levels(x))[x]))
 
-#model2.rrpp <- lm.rrpp(mydat$Y ~ mydat$Group_2 * mydat$Habitat * mydat$Country , print.progress = FALSE)
-#anova(model2.rrpp)
+mydat<-rrpp.data.frame("Y"=imputed[,7:ncol(imputed)],
+                       "Group_2"= as.factor(imputed$Group_2),
+                       "Habitat"=as.factor(imputed$Habitat), 
+                       "Country" = as.factor(imputed$Country))
 
-#groups <- interaction(mydat$X1,mydat$X2)
-#plot(model2.rrpp, type = "PC", pch=21, bg = groups)
-#legend("topright", levels(groups), pch = 21, pt.bg = 1:4)
+model2.rrpp <- lm.rrpp(Y.dist~ mydat$Group_2 * mydat$Habitat * mydat$Country, print.progress = FALSE)
+anova(model2.rrpp)
 ```
 
 
-#### INTERACTIONS
+### MODEL COMPARISON USING LIKELIHOOD RATIO TEST (LTR)
+#### Setup
 ```{r}
-#TODO
-#### Group VS country
-#### Group vs habitat
-
+Y.dist.matrix<-as.matrix(Y.dist)
+#model2.rrpp <- lm.rrpp(Y.dist~ mydat$Group_2 * mydat$Habitat * mydat$Country, print.progress = FALSE)
+Y.group2<-lm(Y.dist.matrix ~ mydat$Group_2, model=T,x=T)
+Y.habitat<-lm(Y.dist.matrix ~ mydat$Habitat, model=T,x=T)
+Y.country<-lm(Y.dist.matrix ~ mydat$Country, model=T,x=T)
+Y.group2.habitat<-lm(Y.dist.matrix ~ mydat$Group_2 + mydat$Habitat, model=T,x=T)
+Y.group2.by.country<-lm(Y.dist.matrix ~ mydat$Group_2 + mydat$Country, model=T,x=T)
+Y.habitat.country<-lm(Y.dist.matrix ~ mydat$Habitat + mydat$Country, model=T,x=T)
+Y.habitat.by.country<-lm(Y.dist.matrix ~mydat$Group_2 * mydat$Habitat, model=T,x=T)
+Y.mancova<-lm(Y.dist.matrix ~mydat$Group_2 + mydat$Habitat*mydat$Country, model=T,x=T)
+Y.mancova_2<-lm(Y.dist.matrix ~mydat$Habitat + mydat$Group_2*mydat$Country, model=T,x=T)
+Y.full<-lm(Y.dist.matrix ~ mydat$Group_2 * mydat$Habitat * mydat$Country, model=T,x=T)
 ```
 
-#### MODEL COMPARISON USING LIKELIHOOD RATIO TEST (LTR)
 ```{r}
-#TODO
+#anova(Y.full)
+# anova(Y.group2.habitat,Y.group2)
+# anova(Y.group2.habitat,Y.habitat)
+# anova(Y.mancova,Y.group2.habitat)
+
+#Error in anova.mlm(Y.full) : residuals have rank 31 < 55
 ```
 
-
-
+#### Would AIC fix the problem we are having? Is this a dimensionality problem?
