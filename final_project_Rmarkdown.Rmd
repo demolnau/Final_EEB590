@@ -31,8 +31,8 @@ library(mice)
 ```
 
 ## Intro
-TODO
 
+ Epidermal micromorphology in Neotropical bamboo foliage leaves has proven to be a useful tool for differentiating between different species. Certain unusual features have been noted in the epidermal micromorphology of one species of savanna bamboo, Guadua paniculata, including papillae on both leaf surfaces and saddle-shaped silica cells. However, it remains unknown whether the few other species of Guadua primarily found in forests, including G. virgata, have similar micromorphology. Additionally, there are several general trends in Guadua macromorphology, including the G. angustifolia type, which are tall, primarily forest-adapted species, the G. glomerata type, which are scandent species primarily found along rivers, the G. sarcocarpa type, which are similar to G. angustifolia but notable for their tree-killing ability, and species of both savanna and forest bamboos that closely resemble G. paniculata. Here, we analyzed whether micromorphological features such as shape of silica bodies and presence, placement, and shape of stomata and papillae on epidermal cells of foliage leaves were associated with different patterns in macromorphology, habitat type, and country of origin of specimens belonging to a selection of species of Guadua.
 
 ## Preprocessing
 
@@ -58,7 +58,6 @@ df=data.frame(mydata[,!( names(mydata) %in% to_drop)],stringsAsFactors = TRUE)
 #### Set columns to factors
 ```{r}
 df<-data.frame(lapply(df,as.factor))
-
 ```
 
 #### Imputation of missing data
