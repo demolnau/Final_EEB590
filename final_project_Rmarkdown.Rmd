@@ -57,6 +57,7 @@ df=data.frame(mydata[,!( names(mydata) %in% to_drop)],stringsAsFactors = TRUE)
 ```
 
 #### Set columns to factors
+Sets all columns to factors and reads them in as a dataframe.
 ```{r}
 df<-data.frame(lapply(df,as.factor))
 ```
@@ -73,24 +74,36 @@ meth[c(colnames(df[,7:length(df)]))]<-"logreg"
 set.seed(183)
 imputed<-mice(df,method = meth, predictorMatrix = predM, m=5,printFlag = FALSE)
 imputed<-complete(imputed)
+
 ```
-
-
+To quick visualize this and make sure that there are no NA left we can use sum(is.na()) in sapply().
 ```{r}
 check_is_boolean<-sapply(imputed,function(x) sum(is.na(x))) #double check to make sure there are no more NA
 ```
 
 ## Analysis
 
-### PCOA
+### Correlation
 
 ```{r}
-#TODO
-
-Y<-imputed[,7:ncol(imputed)]
+Y<-imputed[,7:ncol(imputed)] # reads in the binary data only 
 Y<-data.frame(lapply(Y,function(x) as.numeric(levels(x))[x]))
-Y.dist<-dist.binary(Y, method=2, diag = FALSE, upper = FALSE) #Distance matrix for binary is simple matching coefficient
-PCoA<-cmdscale(Y.dist)   #from vegan
+correlation_y<-data.frame(cor(Y)) #calculated the correlation of the Y values
+
+```
+
+
+### PCOA
+
+We get the distance matrix for our binary data using simple matching coefficient. Then we are able to calculate the PCoA on the distance matrix.
+
+```{r}
+#Distance matrix for binary is simple matching coefficient
+Y.dist<-dist.binary(Y, method=2, diag = FALSE, upper = FALSE)
+# Y.dist
+Y.dist.matrix<-as.matrix(Y.dist)
+
+PCoA<-cmdscale(Y.dist.matrix)   #from vegan
 ```
 
 #### PCoA grouped by Country
@@ -184,41 +197,72 @@ nice_df %>%
  
 ```
 
+### Broken Stick Plot
 
+To look at what compromises the PC1 variance we look at the rotation. The values that are farther away form 0 are more important for the PC.
+```{r}
 
-#### FACTORIAL MANOVA 
+```
+
+### CLUSTERING METHODS?
+
+### FACTORIAL MANOVA 
 
 ```{r}
 #Factorial MANOVA via RRPP
 
-Y<-imputed[,7:ncol(imputed)]
-Y<-data.frame(lapply(Y,function(x) as.numeric(levels(x))[x]))
+# Y<-imputed[,7:ncol(imputed)]
+# Y<-data.frame(lapply(Y,function(x) as.numeric(levels(x))[x]))
 
-mydat<-rrpp.data.frame("Y"=imputed[,7:ncol(imputed)],
+mydat<-rrpp.data.frame("Y"=Y,
                        "Group_2"= as.factor(imputed$Group_2),
                        "Habitat"=as.factor(imputed$Habitat), 
                        "Country" = as.factor(imputed$Country))
 
-model2.rrpp <- lm.rrpp(Y.dist~ mydat$Group_2 * mydat$Habitat * mydat$Country, print.progress = FALSE)
+model2.rrpp <- lm.rrpp(Y.dist.matrix ~ mydat$Group_2 * mydat$Habitat * mydat$Country, print.progress = FALSE)
 anova(model2.rrpp)
 ```
 
 
-### MODEL COMPARISON USING LIKELIHOOD RATIO TEST (LTR)
-#### Setup
+#### POSTHOC ANALYSIS
+Which groups as significantly different from one another? 
+
 ```{r}
-Y.dist.matrix<-as.matrix(Y.dist)
-#model2.rrpp <- lm.rrpp(Y.dist~ mydat$Group_2 * mydat$Habitat * mydat$Country, print.progress = FALSE)
-Y.group2<-lm(Y.dist.matrix ~ mydat$Group_2, model=T,x=T)
-Y.habitat<-lm(Y.dist.matrix ~ mydat$Habitat, model=T,x=T)
-Y.country<-lm(Y.dist.matrix ~ mydat$Country, model=T,x=T)
-Y.group2.habitat<-lm(Y.dist.matrix ~ mydat$Group_2 + mydat$Habitat, model=T,x=T)
-Y.group2.by.country<-lm(Y.dist.matrix ~ mydat$Group_2 + mydat$Country, model=T,x=T)
-Y.habitat.country<-lm(Y.dist.matrix ~ mydat$Habitat + mydat$Country, model=T,x=T)
-Y.habitat.by.country<-lm(Y.dist.matrix ~mydat$Group_2 * mydat$Habitat, model=T,x=T)
-Y.mancova<-lm(Y.dist.matrix ~mydat$Group_2 + mydat$Habitat*mydat$Country, model=T,x=T)
-Y.mancova_2<-lm(Y.dist.matrix ~mydat$Habitat + mydat$Group_2*mydat$Country, model=T,x=T)
-Y.full<-lm(Y.dist.matrix ~ mydat$Group_2 * mydat$Habitat * mydat$Country, model=T,x=T)
+# TODO
+# RRPP does have a pairwise posthoc anaylsis to look at
+#pairwise comparisons via RRPP
+#posthoc <- pairwise(fit = model2.rrpp , groups = mydat$Group_2, print.progress = FALSE)
+#summary(posthoc)
+
+
+```
+
+
+### MODEL COMPARISON USING LIKELIHOOD RATIO TEST (LTR)
+
+#### Setup
+
+```{r}
+Y.group2<-lm.rrpp(Y.dist.matrix ~ mydat$Group_2, 
+                  print.progress=FALSE)
+Y.habitat<-lm.rrpp(Y.dist.matrix ~ mydat$Habitat, 
+                   print.progress=FALSE)
+Y.country<-lm.rrpp(Y.dist.matrix ~ mydat$Country, 
+                   print.progress=FALSE)
+Y.group2.habitat<-lm.rrpp(Y.dist.matrix ~ mydat$Group_2 + mydat$Habitat, 
+                          print.progress=FALSE)
+Y.group2.by.country<-lm.rrpp(Y.dist.matrix ~ mydat$Group_2 + mydat$Country, 
+                             print.progress=FALSE)
+Y.habitat.country<-lm.rrpp(Y.dist.matrix ~ mydat$Habitat + mydat$Country,
+                           print.progress=FALSE)
+Y.habitat.by.country<-lm.rrpp(Y.dist.matrix ~mydat$Group_2 * mydat$Habitat, 
+                              print.progress=FALSE)
+Y.mancova<-lm.rrpp(Y.dist.matrix ~mydat$Group_2 + mydat$Habitat*mydat$Country, 
+                   print.progress=FALSE)
+Y.mancova_2<-lm.rrpp(Y.dist.matrix ~mydat$Habitat + mydat$Group_2*mydat$Country, 
+                     print.progress=FALSE)
+Y.full<-lm.rrpp(Y.dist.matrix ~ mydat$Group_2 * mydat$Habitat * mydat$Country, 
+                print.progress=FALSE)
 ```
 
 ```{r}
@@ -231,3 +275,22 @@ Y.full<-lm(Y.dist.matrix ~ mydat$Group_2 * mydat$Habitat * mydat$Country, model=
 ```
 
 #### Would AIC fix the problem we are having? Is this a dimensionality problem?
+
+#### RRPP MODEL COMPARISON
+
+```{r}
+?RRPP::model.comparison()
+modelComp1<-model.comparison(Y.full, 
+                             Y.mancova, 
+                             Y.mancova_2, 
+                             Y.habitat.by.country, 
+                             Y.habitat.country, Y.habitat, 
+                             Y.group2.by.country, 
+                             Y.group2.habitat, 
+                             Y.group2, 
+                             Y.country, 
+                             type = "logLik", tol=0.01)
+
+modelComp1.summ<-as.data.frame(summary(modelComp1))
+```
+
