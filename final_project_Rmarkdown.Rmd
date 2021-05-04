@@ -7,7 +7,10 @@ output: pdf_document
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
+setwd("D:/Documents/BoxSync/Classes_Spring2021/Advanced_Biostatistics_EEB590C/Homework/Final_EEB590")
 ```
+
+
 
 ## Homework 3
 This assignment is due prior to the last day class. You are to self-select and work in groups: 2-3 in a group. For the assignment below submit one R-script. Annotations via comments are highly encouraged. The script should run!
@@ -17,8 +20,11 @@ This assignment is due prior to the last day class. You are to self-select and w
 1: Obtain a dataset. This may be one of your own, a dataset from DRYAD, or some other source. Identify hypotheses for this dataset and analyze patterns in the data. You may use any methods learned during the semester, but at least one analysis must come from material learned in weeks 11-13.
 
 USE COMMENTS IN THE R CODE to describe what the patterns you find represent.
+
+
+
 ```{r, results='hide',message=FALSE,warning=FALSE}
-setwd("D:/Documents/BoxSync/Classes_Spring2021/Advanced_Biostatistics_EEB590C/Homework/Final_EEB590")
+
 #load appropriate libraries
 library(knitr)
 library(RRPP)
@@ -34,6 +40,8 @@ library(ggplot2)
 ## Intro
 
  Epidermal micromorphology in Neotropical bamboo foliage leaves has proven to be a useful tool for differentiating between different species. Certain unusual features have been noted in the epidermal micromorphology of one species of savanna bamboo, Guadua paniculata, including papillae on both leaf surfaces and saddle-shaped silica cells. However, it remains unknown whether the few other species of Guadua primarily found in forests, including G. virgata, have similar micromorphology. Additionally, there are several general trends in Guadua macromorphology, including the G. angustifolia type, which are tall, primarily forest-adapted species, the G. glomerata type, which are scandent species primarily found along rivers, the G. sarcocarpa type, which are similar to G. angustifolia but notable for their tree-killing ability, and species of both savanna and forest bamboos that closely resemble G. paniculata. Here, we analyzed whether micromorphological features such as shape of silica bodies and presence, placement, and shape of stomata and papillae on epidermal cells of foliage leaves were associated with different patterns in macromorphology, habitat type, and country of origin of specimens belonging to a selection of species of Guadua.
+ 
+TODO : STATE HYPOTHESES
 
 ## Preprocessing
 
@@ -68,7 +76,7 @@ df<-data.frame(lapply(df,as.factor))
 
 In the last three columns, in some species the papillae of the cells adjacent to the stomata obscured theshape of the subsidiary cells. Therefore, the shapes of these subsidiary cells resulted in missing data that we imputed using the MICE package's logistic regression method. 
 
-```{r}
+```{r, results='hide',message=FALSE,warning=FALSE}
 init = mice(df,maxit=0)
 meth = init$method
 predM=init$predictorMatrix
@@ -211,10 +219,18 @@ nice_df %>%
 
 
 To look into the api of the methods.
+
+cmdscale() : a matrix with k columns whose rows give the coordinates of the points chosen to represent the dissimilarities. aka principal coordinates analysis
 ```{r}
-?cmdscale() # a matrix with k columns whose rows give the coordinates of the points chosen to represent the dissimilarities. aka principal coordinates analysis
-?prcomp #Performs a principal components analysis on the given data matrix and returns the results as an object of class prcomp.
-?screeplot() #  plots the variances against the number of the principal component
+?cmdscale() 
+```
+prcomp(): Performs a principal components analysis on the given data matrix and returns the results as an object of class prcomp.
+```{r}
+?prcomp
+```
+screeplot(): plots the variances against the number of the principal component
+```{r}
+?screeplot() 
 ```
 
 ```{r}
@@ -234,6 +250,10 @@ To look at what compromises the PC1 variance we look at the rotation. The values
 ```
 
 ### CLUSTERING METHODS?
+```{r}
+#TODO
+```
+
 
 ### FACTORIAL MANOVA 
 
@@ -248,7 +268,8 @@ mydat<-rrpp.data.frame("Y"=Y,
                        "Habitat"=as.factor(imputed$Habitat), 
                        "Country" = as.factor(imputed$Country))
 
-model2.rrpp <- lm.rrpp(Y.dist.matrix ~ mydat$Group_2 * mydat$Habitat * mydat$Country, print.progress = FALSE)
+model2.rrpp <- lm.rrpp(Y.dist.matrix ~ mydat$Group_2 * mydat$Habitat * mydat$Country, 
+                       print.progress = FALSE)
 anova(model2.rrpp)
 ```
 
@@ -267,8 +288,8 @@ Pupfish$logSize <- log(Pupfish$CS)
 Pupfish$Y <- prcomp(Pupfish$coords)$x[, 1:3]
 
 #?pairwise()
-bamboo.groups<-interaction(mydat$Group_2, mydat$Habitat)
-bamboo.groups
+#bamboo.groups<-interaction(mydat$Group_2, mydat$Habitat)
+#bamboo.groups
 #posthoc <- pairwise(fit = model2.rrpp , groups = bamboo.groups, print.progress = FALSE)
 #summary(posthoc)
 
@@ -303,17 +324,6 @@ Y.mancova_2<-lm.rrpp(Y.dist.matrix ~mydat$Habitat + mydat$Group_2*mydat$Country,
 Y.full<-lm.rrpp(Y.dist.matrix ~ mydat$Group_2 * mydat$Habitat * mydat$Country, 
                 print.progress=FALSE)
 ```
-
-```{r}
-#anova(Y.full)
-# anova(Y.group2.habitat,Y.group2)
-# anova(Y.group2.habitat,Y.habitat)
-# anova(Y.mancova,Y.group2.habitat)
-
-#Error in anova.mlm(Y.full) : residuals have rank 31 < 55
-```
-
-#### Would AIC fix the problem we are having? Is this a dimensionality problem?
 
 #### RRPP MODEL COMPARISON
 
