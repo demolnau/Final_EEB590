@@ -51,9 +51,11 @@ Remove column V and Y, because there is missing data and we cannot impute the da
  V. Adaxial: Frequency of stomates if present on the adaxial surface of foliage leaf blades:  0 = common; 1 = infrequent.
 Y. Adaxial: Papillae on long cells of the intercostal zone adjacent to the stomates:  0 = not overarching the stomates; 1 = overarching the stomates.
 ```{r}
-to_drop<-c("Adaxial: Papillae on long cells of the intercostal zone adjacent to the stomates:  0 = not overarching the stomates; 1 = overarching the stomates.","Adaxial: Frequency of stomates if present on the adaxial surface of foliage leaf blades:  0 = common; 1 = infrequent.")
+to_drop<-c("Adaxial: Papillae on long cells of the intercostal zone adjacent to the stomates:  0 = not overarching the stomates; 1 = overarching the stomates.",
+           "Adaxial: Frequency of stomates if present on the adaxial surface of foliage leaf blades:  0 = common; 1 = infrequent.")
 
-df=data.frame(mydata[,!( names(mydata) %in% to_drop)],stringsAsFactors = TRUE)
+df=data.frame(mydata[,!( names(mydata) %in% to_drop)],
+              stringsAsFactors = TRUE)
 ```
 
 #### Set columns to factors
@@ -72,13 +74,17 @@ meth = init$method
 predM=init$predictorMatrix
 meth[c(colnames(df[,7:length(df)]))]<-"logreg"
 set.seed(183)
-imputed<-mice(df,method = meth, predictorMatrix = predM, m=5,printFlag = FALSE)
+imputed<-mice(df,method = meth, 
+              predictorMatrix = predM, 
+              m=5,
+              rintFlag = FALSE)
 imputed<-complete(imputed)
 
 ```
 To quick visualize this and make sure that there are no NA left we can use sum(is.na()) in sapply().
 ```{r}
-check_is_boolean<-sapply(imputed,function(x) sum(is.na(x))) #double check to make sure there are no more NA
+#double check to make sure there are no more NA
+check_is_boolean<-sapply(imputed,function(x) sum(is.na(x))) 
 ```
 
 ## Analysis
@@ -89,7 +95,6 @@ check_is_boolean<-sapply(imputed,function(x) sum(is.na(x))) #double check to mak
 Y<-imputed[,7:ncol(imputed)] # reads in the binary data only 
 Y<-data.frame(lapply(Y,function(x) as.numeric(levels(x))[x]))
 correlation_y<-data.frame(cor(Y)) #calculated the correlation of the Y values
-
 ```
 
 
@@ -100,16 +105,21 @@ We get the distance matrix for our binary data using simple matching coefficient
 ```{r}
 #Distance matrix for binary is simple matching coefficient
 Y.dist<-dist.binary(Y, method=2, diag = FALSE, upper = FALSE)
-# Y.dist
 Y.dist.matrix<-as.matrix(Y.dist)
-
-PCoA<-cmdscale(Y.dist.matrix)   #from vegan
+PCoA<-cmdscale(Y.dist.matrix, eig= TRUE, x.ret=TRUE, list. = TRUE)   #from vegan
 ```
+
+### PCA ??
+```{r}
+pca.bamboo<-prcomp(Y.dist.matrix)
+```
+ 
+
 
 #### PCoA grouped by Country
 
 ```{r}
-nice_df <- PCoA %>% 
+nice_df <- PCoA$points %>% 
   data.frame
 nice_df$country <- df$Country
 nice_df %>% 
@@ -199,9 +209,28 @@ nice_df %>%
 
 ### Broken Stick Plot
 
+
+To look into the api of the methods.
+```{r}
+?cmdscale() # a matrix with k columns whose rows give the coordinates of the points chosen to represent the dissimilarities. aka principal coordinates analysis
+?prcomp #Performs a principal components analysis on the given data matrix and returns the results as an object of class prcomp.
+?screeplot() #  plots the variances against the number of the principal component
+```
+
+```{r}
+#TODO
+
+#screeplot(PCoA$points, type = "barplot")  
+
+#ERROR 
+#Not reading in as a principal component analysis
+#which principal component analysis to use? 
+
+```
+
 To look at what compromises the PC1 variance we look at the rotation. The values that are farther away form 0 are more important for the PC.
 ```{r}
-
+#pca.bamboo$rotation[,1] #PC1
 ```
 
 ### CLUSTERING METHODS?
@@ -229,11 +258,21 @@ Which groups as significantly different from one another?
 
 ```{r}
 # TODO
+
 # RRPP does have a pairwise posthoc anaylsis to look at
 #pairwise comparisons via RRPP
-#posthoc <- pairwise(fit = model2.rrpp , groups = mydat$Group_2, print.progress = FALSE)
+data("Pupfish")
+dim(Pupfish$coords) 
+Pupfish$logSize <- log(Pupfish$CS) 
+Pupfish$Y <- prcomp(Pupfish$coords)$x[, 1:3]
+
+#?pairwise()
+bamboo.groups<-interaction(mydat$Group_2, mydat$Habitat)
+bamboo.groups
+#posthoc <- pairwise(fit = model2.rrpp , groups = bamboo.groups, print.progress = FALSE)
 #summary(posthoc)
 
+#Dimensionality issues to fix
 
 ```
 
@@ -255,7 +294,7 @@ Y.group2.by.country<-lm.rrpp(Y.dist.matrix ~ mydat$Group_2 + mydat$Country,
                              print.progress=FALSE)
 Y.habitat.country<-lm.rrpp(Y.dist.matrix ~ mydat$Habitat + mydat$Country,
                            print.progress=FALSE)
-Y.habitat.by.country<-lm.rrpp(Y.dist.matrix ~mydat$Group_2 * mydat$Habitat, 
+Y.habitat.by.country<-lm.rrpp(Y.dist.matrix ~ mydat$Group_2 * mydat$Habitat, 
                               print.progress=FALSE)
 Y.mancova<-lm.rrpp(Y.dist.matrix ~mydat$Group_2 + mydat$Habitat*mydat$Country, 
                    print.progress=FALSE)
@@ -279,7 +318,7 @@ Y.full<-lm.rrpp(Y.dist.matrix ~ mydat$Group_2 * mydat$Habitat * mydat$Country,
 #### RRPP MODEL COMPARISON
 
 ```{r}
-?RRPP::model.comparison()
+#?RRPP::model.comparison()
 modelComp1<-model.comparison(Y.full, 
                              Y.mancova, 
                              Y.mancova_2, 
