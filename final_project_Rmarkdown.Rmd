@@ -27,6 +27,7 @@ USE COMMENTS IN THE R CODE to describe what the patterns you find represent.
 
 #load appropriate libraries
 library(knitr)
+library(formatR)
 library(RRPP)
 library(geomorph)
 library(tidyverse)
@@ -35,13 +36,14 @@ library(ade4)
 library(vegan)
 library(mice)
 library(ggplot2)
+library(pander)
 ```
 
 ## Intro
 
  Epidermal micromorphology in Neotropical bamboo foliage leaves has proven to be a useful tool for differentiating between different species. Certain unusual features have been noted in the epidermal micromorphology of one species of savanna bamboo, Guadua paniculata, including papillae on both leaf surfaces and saddle-shaped silica cells. However, it remains unknown whether the few other species of Guadua primarily found in forests, including G. virgata, have similar micromorphology. Additionally, there are several general trends in Guadua macromorphology, including the G. angustifolia type, which are tall, primarily forest-adapted species, the G. glomerata type, which are scandent species primarily found along rivers, the G. sarcocarpa type, which are similar to G. angustifolia but notable for their tree-killing ability, and species of both savanna and forest bamboos that closely resemble G. paniculata. Here, we analyzed whether micromorphological features such as shape of silica bodies and presence, placement, and shape of stomata and papillae on epidermal cells of foliage leaves were associated with different patterns in macromorphology, habitat type, and country of origin of specimens belonging to a selection of species of Guadua.
  
-TODO : STATE HYPOTHESES
+We hypothesized that we would see a significant difference in the epidermal micromorphology of Guadua foliage leaves when categorized by country of origin, macromorphological group, and habitat.
 
 ## Preprocessing
 
@@ -54,7 +56,8 @@ mydata<-read_excel(path="data/TransformGuaduaSet.xlsx", col_names = TRUE, na="x"
 ```
 
 #### Remove Column V and Y
-Remove column V and Y, because there is missing data and we cannot impute the data because it just doesn't make sense to attempt to predict these columns.
+We removed column V and Y, because there is missing data and in the case of columns of V and Y it doesn't make sense to attempt to predict these columns.When stomates are not present on the adaxial surface, we cannot estimate stomatal frequency.Similarly, when papillae are not present on long cells of the intercostal zone adjacent to the
+papillae, we cannot impute whether they overarch the stomates or not.
 
  V. Adaxial: Frequency of stomates if present on the adaxial surface of foliage leaf blades:  0 = common; 1 = infrequent.
 Y. Adaxial: Papillae on long cells of the intercostal zone adjacent to the stomates:  0 = not overarching the stomates; 1 = overarching the stomates.
@@ -74,7 +77,7 @@ df<-data.frame(lapply(df,as.factor))
 
 #### Imputation of missing data
 
-In the last three columns, in some species the papillae of the cells adjacent to the stomata obscured theshape of the subsidiary cells. Therefore, the shapes of these subsidiary cells resulted in missing data that we imputed using the MICE package's logistic regression method. 
+In the last three columns, in some species the papillae of the cells adjacent to the stomata obscured the shape of the subsidiary cells. Therefore, the shapes of these subsidiary cells resulted in missing data that we imputed using the MICE package's logistic regression method. 
 
 ```{r, results='hide',message=FALSE,warning=FALSE}
 init = mice(df,maxit=0)
@@ -106,9 +109,9 @@ correlation_y<-data.frame(cor(Y)) #calculated the correlation of the Y values
 ```
 
 
-### PCOA
+### PCoA
 
-We get the distance matrix for our binary data using simple matching coefficient. Then we are able to calculate the PCoA on the distance matrix.
+We get the distance matrix for our binary data using simple matching coefficient. Then we are able to calculate the PCoA on the distance matrix to visualize the pairwise distances between individual Guadua specimen epidermal micromorphology.
 
 ```{r}
 #Distance matrix for binary is simple matching coefficient
@@ -117,14 +120,17 @@ Y.dist.matrix<-as.matrix(Y.dist)
 PCoA<-cmdscale(Y.dist.matrix, eig= TRUE, x.ret=TRUE, list. = TRUE)   #from vegan
 ```
 
-### PCA ??
-```{r}
-pca.bamboo<-prcomp(Y.dist.matrix)
-```
- 
-
 
 #### PCoA grouped by Country
+
+To visualize the whether specimens of Guadua appear to group according to country of origin
+based on the pairwise differences seen between specimen epidermal micromorphology, we
+labeled individual specimen coordinates by the country in which the specimens were collected.
+As many of these specimens are old (sometimes upwards of 80 years old), locational information
+beyond country is often unavailable. However, if geographic distance, often related to allopatric
+speciation, is an important determinant of epidermal micromorphology, we suspected that we
+might see pairwise distances indicative of grouping by country. However, we did not observe
+this in our results.
 
 ```{r}
 nice_df <- PCoA$points %>% 
@@ -146,30 +152,24 @@ nice_df %>%
   
 ```
 
-#### PCoA grouped by Group1
-
-```{r}
-nice_df$Group_1<- df$Group_1
-nice_df %>% 
-  mutate(
-    Group_1 = str_to_title(str_replace_all(Group_1, "_", " "))
-  ) %>%
-  ggplot(aes(X1, X2)) +
-  geom_point(aes(color = Group_1), size = 2) +
-  scale_color_viridis_d() + 
-  theme_minimal() +
-  theme(
-    panel.border = element_rect(size = 2, color = "black", fill = NA)
-  ) + 
-  labs(
-    color = "Group 1", 
-    x = "Axis 1",
-    y = "Axis 2"
-  )
- 
-```
 
 #### PCoA grouped by Group 2
+
+Species of Guadua can be categorized by their macromorphology, which roughly aligns with
+habitat. Species of the “savanna type” tend to be under 4 m tall, have culms of less than 4 cm in
+diameter, and have narrow foliage leaves. Those of the “forest type” tend to be over 4 m tall,
+with erect culms 4 cm in diameter and wide foliage leaves. Guadua of the “treekiller type” are
+similar to those of the “forest type” but lean on trees, weighing them down and often breaking
+and killing them, while having longer rhizomes. “River type” Guadua live along rivers and have
+relatively small-diameter, solid, scandent culms that trail over surrounding plants. To visualize
+the whether specimens of Guadua appear to group according to these macromorphological types
+based on the pairwise differences seen between specimen epidermal micromorphology, we
+labeled individual specimen coordinates by macromorphological groups in which we categorized
+them. We expected that we might see grouping based on these different macromorphology types,
+and here observed that there appear to be roughly two groups, one including “savanna type”
+species and the other including the other three: “forest”, “river’, and “treekiller”. Although the
+“treekiller” and “river” types appear to group closely with each other, they fall within the main
+group that includes these three types.
 
 ```{r}
 nice_df$Group_2<- df$Group_2
@@ -194,6 +194,17 @@ nice_df %>%
 
 #### PCoA grouped by Habitat
 
+Differences in epidermal micromorphology based on habitat have been observed in other genera
+of Neotropical woody bamboos. Here, we sorted Guadua into three primary habitat types:
+savanna, forest, and river. Note that some species with “savanna type” macromorphology are
+more commonly found in forests, and classified accordingly. To visualize the whether specimens
+of Guadua appear to group according to habitat based on the pairwise differences seen between
+specimen epidermal micromorphology, we labeled individual specimen coordinates by the
+habitat in which they are most commonly observed. We expected that we might see grouping
+based on these different habitat, and here observed that there appear to be roughly two groups:
+one of savanna species, and another of forest and river species. Although the river species appear
+to group together, they do not group separately from others.
+
 ```{r}
 nice_df$Habitat<- df$Habitat
 nice_df %>% 
@@ -215,54 +226,95 @@ nice_df %>%
  
 ```
 
-### Broken Stick Plot
+### Scree Plot
 
-
-To look into the api of the methods.
-
-cmdscale() : a matrix with k columns whose rows give the coordinates of the points chosen to represent the dissimilarities. aka principal coordinates analysis
-```{r}
-?cmdscale() 
-```
-prcomp(): Performs a principal components analysis on the given data matrix and returns the results as an object of class prcomp.
-```{r}
-?prcomp
-```
-screeplot(): plots the variances against the number of the principal component
-```{r}
-?screeplot() 
-```
+From the PCoA we are able to obtain eigenvalues and then plot them to show the percent variation explained along each PCoA axis. As seen in the plot below, PCoA axis 1 is responsible for the majority of variation in the PCoA, followed by a steep drop in variation. By the 20th axis, variation is arguably negligible. 
 
 ```{r}
-#TODO
+eig_df <- data.frame( x_values = c(1:length(PCoA$eig)) , eig_value=c(PCoA$eig))
 
-#screeplot(PCoA$points, type = "barplot")  
 
-#ERROR 
-#Not reading in as a principal component analysis
-#which principal component analysis to use? 
 
+ggplot(data=eig_df, aes(x=x_values, y=eig_value))+
+  geom_line() +
+  geom_point() + 
+  theme_minimal() +
+  theme(
+    panel.border = element_rect(size = 2, color = "black", fill = NA)
+  ) + 
+  labs(
+      x = "Axis 1",
+    y = "Axis 2"
+  )
 ```
 
-To look at what compromises the PC1 variance we look at the rotation. The values that are farther away form 0 are more important for the PC.
+### Clustering
+
+Although clustering by kmeans is somewhat qualitative, it does visualize the clustering we see in the PCoA above. When we cluster by 4, 3, and 2, kmeans=2 appears to explain the majority of the points.
+
+
 ```{r}
-#pca.bamboo$rotation[,1] #PC1
+PC.scores<-PCoA$points
 ```
 
-### CLUSTERING METHODS?
+#### Clustering by 4
+
+Clustering under the assumption of 4 groups (k=4).
+
 ```{r}
-#TODO
+#K-means = 4
+kclusters4<-kmeans(PC.scores,4)
+plot(PC.scores[,1:2],col=kclusters4$cluster)
+points(kclusters4$centers, col = 1:4, pch = 8, cex=2)
 ```
 
+#### Clustering by 3
+Clustering under the assumption of 3 groups (k=3).
+```{r}
+#K-means = 3
+kclusters3<-kmeans(PC.scores,3)
+plot(PC.scores[,1:2],col=kclusters3$cluster)
+points(kclusters3$centers, col = 1:3, pch = 8, cex=2)
+```
+
+#### Clustering by 2
+Clustering under the assumption of 2 groups (k=2).
+```{r}
+#K-means = 2
+kclusters2<-kmeans(PC.scores,2)
+plot(PC.scores[,1:2],col=kclusters2$cluster)
+points(kclusters2$centers, col = 1:2, pch = 8, cex=2)
+
+#NOTE: repeating k-means at a given level can lead to differing results
+```
+#### TESS: total error sums-of-squares
+Compare the total error sums-of-squares to see which grouping results in a leveling off of the kmeans of PC scores. 
+```{r}
+#compare TESS
+TESS<-array(NA,40)
+for (i in 1:40){
+  TESS[i]<-kmeans(PC.scores,i)$tot.withinss
+}
+plot( TESS)  #seems to bottom out at 3 groups
+```
+ Based on the TESS results, it appears that the mean PC.scores level off at about a k grouping of 2 or 3. We would argue that there is 2 groups(k=2).
+```{r}
+plot(PC.scores[,1:2],col=kclusters3$cluster, main="K=2")
+points(kclusters3$centers, col = 1:3, pch = 8, cex=2)
+```
 
 ### FACTORIAL MANOVA 
 
+We conducted a factorial MANOVA to determine whether there were significant differences
+between the distances found for epidermal micromorphology by macromorphological type
+(group), habitat, and country. We found that there were significant differences in the distances
+for specimens based on macromorphological group and based on habitat. There was no
+significant difference between distances for specimens based on country, and no significant
+difference for the interaction between macromorphological group and country or habitat and
+country.
+
 ```{r}
 #Factorial MANOVA via RRPP
-
-# Y<-imputed[,7:ncol(imputed)]
-# Y<-data.frame(lapply(Y,function(x) as.numeric(levels(x))[x]))
-
 mydat<-rrpp.data.frame("Y"=Y,
                        "Group_2"= as.factor(imputed$Group_2),
                        "Habitat"=as.factor(imputed$Habitat), 
@@ -272,31 +324,6 @@ model2.rrpp <- lm.rrpp(Y.dist.matrix ~ mydat$Group_2 * mydat$Habitat * mydat$Cou
                        print.progress = FALSE)
 anova(model2.rrpp)
 ```
-
-
-#### POSTHOC ANALYSIS
-Which groups as significantly different from one another? 
-
-```{r}
-# TODO
-
-# RRPP does have a pairwise posthoc anaylsis to look at
-#pairwise comparisons via RRPP
-data("Pupfish")
-dim(Pupfish$coords) 
-Pupfish$logSize <- log(Pupfish$CS) 
-Pupfish$Y <- prcomp(Pupfish$coords)$x[, 1:3]
-
-#?pairwise()
-#bamboo.groups<-interaction(mydat$Group_2, mydat$Habitat)
-#bamboo.groups
-#posthoc <- pairwise(fit = model2.rrpp , groups = bamboo.groups, print.progress = FALSE)
-#summary(posthoc)
-
-#Dimensionality issues to fix
-
-```
-
 
 ### MODEL COMPARISON USING LIKELIHOOD RATIO TEST (LTR)
 
@@ -326,8 +353,8 @@ Y.full<-lm.rrpp(Y.dist.matrix ~ mydat$Group_2 * mydat$Habitat * mydat$Country,
 ```
 
 #### RRPP MODEL COMPARISON
-
-```{r}
+For our model comparison, we used model.comparison() from the RRPP package using the log likelihood method. From this, we are able to determine that the Y.group2 model is the best fit based on it has the highest log-likelihood score and the lowest AIC score. 
+```{r, results='hide',message=FALSE,warning=FALSE}
 #?RRPP::model.comparison()
 modelComp1<-model.comparison(Y.full, 
                              Y.mancova, 
@@ -341,5 +368,42 @@ modelComp1<-model.comparison(Y.full,
                              type = "logLik", tol=0.01)
 
 modelComp1.summ<-as.data.frame(summary(modelComp1))
+
 ```
+```{r}
+
+pandoc.table(modelComp1.summ,
+             style = "grid", 
+               plain.ascii = TRUE)
+
+```
+
+
+
+Based on the results of our analyses, it appears that there are significant differences in the epidermal micromorphology of Guadua based on macromorphological group (the Group_2 column in our data). Although there were also significant differences in epidermal micromorphology of Guadua based on habitat, classifying the species by macromorphological group appeared to better model the variation seen in our data. 
+
+
+ The two clusters that come out of this break the groups into Savannah_type versus everything else. We were not able to do a Posthoc pairwise comparison of these types because of the nature of the data. For clarity we add a column purposefully breaking the specimens into Savannah type or other types and fit based off of the apparent clustering. After a factorial MANOVA, it appears that there is a significant difference between Savannah type and the other groups.
+ 
+Group by Savannah or other: 
+```{r}
+# combine river group, tree killer and forest and compare against savannah
+types<-c(as.character(unique(imputed$Group_2)))
+Group_3<-rep(NA, 55)
+savannah_index<-which(imputed$Group_2 == types[1])
+not_sav_index<-which((imputed$Group_2 == types[1]) == FALSE)
+Group_3[which(imputed$Group_2 == types[1])] <- c(as.character(imputed$Group_2[savannah_index]))
+Group_3[not_sav_index]<-c("other")
+new<-cbind(imputed[1:6], Group_3)
+new<-cbind(new, imputed[7:ncol(imputed)])
+new<-data.frame(lapply(new,as.factor))
+#Factorial MANOVA via RRPP
+mydat2<-rrpp.data.frame("Y"=Y,
+                       "Group_3"= as.factor(new$Group_3))
+
+model2.rrpp <- lm.rrpp(Y.dist.matrix ~ mydat2$Group_3, 
+                       print.progress = FALSE)
+anova(model2.rrpp)
+```
+
 
